@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MUCHBE TRADING - CBDC Wallet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Tahoma, sans-serif;
+      margin: 20px;
+      background: #f0f6ff;
+      color: #222;
+    }
+    input, select {
+      margin: 8px 0;
+      padding: 10px;
+      width: 100%;
+      max-width: 320px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 16px;
+      background-color: #0099cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0077a3;
+    }
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h2, h3 {
+      color: #005fa3;
+    }
+    nav a {
+      text-decoration: none;
+      color: #005fa3;
+      margin-right: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>MUCHBE CBDC Wallet (ZAR)</h2>
+  <nav>
+    <a href="#">Home</a>
+    <a href="#wallet">Wallet</a>
+  </nav>
+
+  <div id="registration">
+    <h3>Register</h3>
+    <input type="text" id="name" placeholder="Name / Business Name">
+    <select id="type">
+      <option value="customer">Public Customer</option>
+      <option value="business">Business</option>
+    </select>
+    <input type="email" id="email" placeholder="Email">
+    <button onclick="registerAccount()">Create Wallet</button>
+  </div>
+
+  <div id="walletSection" style="display:none">
+    <h3>Wallet Information</h3>
+    <p><strong>Name:</strong> <span id="userName"></span></p>
+    <p><strong>CBDC Account:</strong> <span id="walletAddress"></span></p>
+    <p><strong>Balance (ZAR):</strong> <span id="walletBalance"></span></p>
+    <div id="qrcode"></div>
+  </div>
+</div>
+
+<script>
+  let web3 = new Web3(Web3.givenProvider || "https://mainnet.infura.io/v3/YOUR_PROJECT_ID");
+  let systemTreasury = "0xYourMetaMaskTreasuryAddressHere"; // Tax & Fee Wallet
+
+  async function registerAccount() {
+    const name = document.getElementById('name').value;
+    const type = document.getElementById('type').value;
+    const email = document.getElementById('email').value;
+
+    const account = web3.eth.accounts.create();
+    const address = account.address;
+    const privateKey = account.privateKey;
+
+    let balance = (type === 'business') ? 100000 : 1000;
+
+    document.getElementById('registration').style.display = 'none';
+    document.getElementById('walletSection').style.display = 'block';
+    document.getElementById('userName').innerText = name;
+    document.getElementById('walletAddress').innerText = address;
+    document.getElementById('walletBalance').innerText = balance;
+
+    new QRCode(document.getElementById("qrcode"), address);
+
+    // You may store the user in backend or localStorage if needed:
+    console.log("User Registered:", {name, email, address, privateKey, balance});
+  }
+</script>
+</body>
+</html>
+
+
