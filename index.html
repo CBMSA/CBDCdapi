@@ -1,111 +1,189 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MUCHBE TRADING - CBDC Wallet</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <title>SADC Tokenized Bond Issuance</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     body {
-      font-family: Tahoma, sans-serif;
-      margin: 20px;
-      background: #f0f6ff;
-      color: #222;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      max-width: 600px;
+      margin: auto;
+    }
+    label, input, select {
+      display: block;
+      margin-bottom: 10px;
+      width: 100%;
     }
     input, select {
-      margin: 8px 0;
-      padding: 10px;
-      width: 100%;
-      max-width: 320px;
+      padding: 8px;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 6px;
     }
     button {
-      padding: 10px 16px;
-      background-color: #0099cc;
+      padding: 12px;
+      width: 100%;
+      background: #0057b7;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
       margin-top: 10px;
     }
-    button:hover {
-      background-color: #0077a3;
+    #certificateSection {
+      display: none;
+      margin-top: 30px;
+      text-align: center;
     }
-    .container {
-      background: #fff;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    h2, h3 {
-      color: #005fa3;
-    }
-    nav a {
-      text-decoration: none;
-      color: #005fa3;
-      margin-right: 15px;
-      font-weight: bold;
+    pre {
+      text-align: left;
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <h2>MUCHBE CBDC Wallet (ZAR)</h2>
-  <nav>
-    <a href="#">Home</a>
-    <a href="#wallet">Wallet</a>
-  </nav>
+  <div class="card">
+    <h2>Issue SADC Tokenized Bond</h2>
 
-  <div id="registration">
-    <h3>Register</h3>
-    <input type="text" id="name" placeholder="Name / Business Name">
-    <select id="type">
-      <option value="customer">Public Customer</option>
-      <option value="business">Business</option>
+    <label for="country">Issuing Country</label>
+    <select id="country">
+      <option>South Africa (ZAR)</option>
+      <option>Zimbabwe (ZWL)</option>
+      <option>Namibia (NAD)</option>
+      <option>Botswana (BWP)</option>
+      <option>Lesotho (LSL)</option>
+      <option>Eswatini (SZL)</option>
+      <option>Angola (AOA)</option>
+      <option>Mozambique (MZN)</option>
+      <option>Tanzania (TZS)</option>
+      <option>Malawi (MWK)</option>
+      <option>Zambia (ZMW)</option>
+      <option>DR Congo (CDF)</option>
+      <option>Mauritius (MUR)</option>
+      <option>Seychelles (SCR)</option>
     </select>
-    <input type="email" id="email" placeholder="Email">
-    <button onclick="registerAccount()">Create Wallet</button>
+
+    <label for="recipient">Investor Wallet Address</label>
+    <input type="text" id="recipient" placeholder="0x...">
+
+    <label for="amount">Bond Amount</label>
+    <input type="number" id="amount" placeholder="e.g. 1000000">
+
+    <label for="maturity">Maturity (Years)</label>
+    <input type="number" id="maturity" placeholder="e.g. 5">
+
+    <label for="interest">Interest Rate (%)</label>
+    <input type="number" id="interest" placeholder="e.g. 7">
+
+    <label for="rateType">Rate Type</label>
+    <select id="rateType">
+      <option>Fixed</option>
+      <option>Floating</option>
+    </select>
+
+    <label for="yield">Yield (%)</label>
+    <input type="number" id="yield" placeholder="e.g. 6.8">
+
+    <label for="bid">Bid Price</label>
+    <input type="number" id="bid" placeholder="e.g. 99.5">
+
+    <label for="ask">Ask Price</label>
+    <input type="number" id="ask" placeholder="e.g. 100.2">
+
+    <button onclick="issueBond()">Issue Bond</button>
+
+    <div id="status"></div>
   </div>
 
-  <div id="walletSection" style="display:none">
-    <h3>Wallet Information</h3>
-    <p><strong>Name:</strong> <span id="userName"></span></p>
-    <p><strong>CBDC Account:</strong> <span id="walletAddress"></span></p>
-    <p><strong>Balance (ZAR):</strong> <span id="walletBalance"></span></p>
-    <div id="qrcode"></div>
+  <div id="certificateSection" class="card">
+    <h3>Bond Certificate</h3>
+    <pre id="certificateText"></pre>
+    <div id="qrCode"></div>
+    <button onclick="downloadPDF()">Download PDF</button>
   </div>
-</div>
 
-<script>
-  let web3 = new Web3(Web3.givenProvider || "https://mainnet.infura.io/v3/YOUR_PROJECT_ID");
-  let systemTreasury = "0xYourMetaMaskTreasuryAddressHere"; // Tax & Fee Wallet
+  <script>
+    async function issueBond() {
+      const bondNumber = "SADC-" + Math.floor(100000 + Math.random() * 900000);
+      const country = document.getElementById("country").value;
+      const recipient = document.getElementById("recipient").value;
+      const amount = document.getElementById("amount").value;
+      const maturity = document.getElementById("maturity").value;
+      const interest = document.getElementById("interest").value;
+      const rateType = document.getElementById("rateType").value;
+      const yieldRate = document.getElementById("yield").value;
+      const bid = document.getElementById("bid").value;
+      const ask = document.getElementById("ask").value;
 
-  async function registerAccount() {
-    const name = document.getElementById('name').value;
-    const type = document.getElementById('type').value;
-    const email = document.getElementById('email').value;
+      if (!recipient.startsWith("0x")) {
+        alert("Please enter a valid wallet address.");
+        return;
+      }
 
-    const account = web3.eth.accounts.create();
-    const address = account.address;
-    const privateKey = account.privateKey;
+      const bondData = {
+        bondNumber,
+        country,
+        recipient,
+        amount,
+        maturity,
+        interestRate: interest + "%",
+        rateType,
+        yield: yieldRate + "%",
+        bid,
+        ask,
+        issuedBy: "SADC Central Fiscal Platform",
+        issueDate: new Date().toISOString().split('T')[0]
+      };
 
-    let balance = (type === 'business') ? 100000 : 1000;
+      // Display certificate
+      document.getElementById("certificateSection").style.display = "block";
+      document.getElementById("certificateText").textContent = JSON.stringify(bondData, null, 2);
 
-    document.getElementById('registration').style.display = 'none';
-    document.getElementById('walletSection').style.display = 'block';
-    document.getElementById('userName').innerText = name;
-    document.getElementById('walletAddress').innerText = address;
-    document.getElementById('walletBalance').innerText = balance;
+      // Generate QR Code
+      const qrContainer = document.getElementById("qrCode");
+      qrContainer.innerHTML = "";
+      new QRCode(qrContainer, {
+        text: JSON.stringify(bondData),
+        width: 150,
+        height: 150
+      });
 
-    new QRCode(document.getElementById("qrcode"), address);
+      // Store for PDF
+      window.generatedBond = bondData;
 
-    // You may store the user in backend or localStorage if needed:
-    console.log("User Registered:", {name, email, address, privateKey, balance});
-  }
-</script>
+      // Optional: send bondData to smart contract/backend here
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const bond = window.generatedBond;
+
+      let y = 10;
+      doc.setFontSize(14);
+      doc.text("SADC Tokenized Bond Certificate", 10, y); y += 10;
+
+      Object.entries(bond).forEach(([key, value]) => {
+        doc.text(`${key}: ${value}`, 10, y);
+        y += 10;
+      });
+
+      doc.save("SADC_Bond_Certificate.pdf");
+    }
+  </script>
 </body>
 </html>
-
 
